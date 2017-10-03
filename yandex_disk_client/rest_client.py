@@ -1,10 +1,10 @@
 from urllib.parse import urljoin
 
-import requests
 from requests import request
 
 from .core import Directory, Disk, File
-from .exceptions import YandexDiskException
+from .exceptions import YaDiskInvalidStatusException, \
+    YaDiskInvalidResultException
 
 BASE_URL = "https://cloud-api.yandex.net:443/v1/disk"
 
@@ -25,10 +25,15 @@ class YandexDiskClient(object):
         }
 
     def request(self, method, url, **kwargs):
-        response = request(method, url, **kwargs)
-        self._check_code(response)
-        response_data = response.json()
-        return response_data
+        resp = request(method, url, headers=self.base_headers, **kwargs)
+        if resp.status_code not in [200, 201]:
+            raise YaDiskInvalidStatusException(resp.status_code, resp.text)
+
+        resp_data = resp.json()
+        if resp_data.get('status') != 'ok':
+            raise YaDiskInvalidResultException(url, resp_data.get('status'))
+
+        return resp_data
 
     def get_disk_metadata(self):
         """
@@ -87,7 +92,7 @@ class YandexDiskClient(object):
         """
         :return: published elements
         """
-        json_dict = self._get_dictionary_of_published_files()
+        json_dict = self._get_published_files()
 
         elements = []
 
@@ -99,110 +104,72 @@ class YandexDiskClient(object):
 
         return elements
 
-    def get_public_link_to_folder_or_file(self, path):
-        """
-        :param path: path
+    def publish(self, path):
+        """get public link to folder or file
+        :param path: path to publication file or directory
         :return: public link to folder or file
         """
-        url = self._base_url + "/resources/publish"
 
-        payload = {'path': path}
-        r = requests.put(url, headers=self.base_headers, params=payload)
-        self._check_code(r)
+        url = urljoin(self._base_url, 'resources/publish')
+        result_info = self.request('put', url, params={'path': path})
+        # TODO: проверить что приходит в result_info...
+        files = self._get_published_files()
 
-        files = self._get_dictionary_of_published_files()
+        for file in files['items']:
+            if str(file['path']).endswith(path):
+                return file['public_url']
 
-        for file in files["items"]:
-            if str(file["path"]).endswith(path):
-                return file["public_url"]
+        return ''
 
-        return ""
-
-    def unpublish_folder_or_file(self, path):
+    def unpublish(self, path):
         """
         Unpublish folder of file
         :param path: path to file or folder
         """
-        url = self._base_url + "/resources/unpublish"
+        url = urljoin(self._base_url, 'resources/unpublish')
+        result_info = self.request('put', url, params={'path': path})
+        # TODO: проверить result_info
 
-        payload = {'path': path}
-        r = requests.put(url, headers=self.base_headers, params=payload)
-        self._check_code(r)
-
-    def get_list_of_all_files(self):
+    def files(self):
         """
         :return: List of all files
         """
-        url = self._base_url + "/resources/files"
-
-        r = requests.get(url, headers=self.base_headers)
-        self._check_code(r)
-
-        json_dict = r.json()
-
-        files = []
-
-        for item in json_dict["items"]:
-            f = File(**item)
-            files.append(f)
-
+        url = urljoin(self._base_url, 'resources/files')
+        result_info = self.request('get', url)
+        files = [File(**item) for item in result_info['items']]
         return files
 
-    def move_folder_or_file(self, path_from, path_to):
+    def move(self, path_from, path_to):
         """
-        Move folder or file
-        :param path_from: path from
-        :param path_to: path to
+        Move file or directory
         """
-        url = self._base_url + "/resources/move"
-
+        url = urljoin(self._base_url, 'resources/move')
         payload = {'path': path_to, 'from': path_from}
-        r = requests.post(url, headers=self.base_headers, params=payload)
-        self._check_code(r)
+        self.request('post', url, params=payload)
 
-    def upload_file(self, path_from, path_to):
+    def upload(self, path_from, path_to):
         """
         Upload file
         :param path_from: path from
         :param path_to: path to yandex disk
         """
-        url = self._base_url + "/resources/upload"
-
-        payload = {'path': path_to}
-        r = requests.get(url, headers=self.base_headers, params=payload)
-        self._check_code(r)
-
-        json_dict = r.json()
-        upload_link = json_dict["href"]
-
+        url = urljoin(self._base_url, 'resources/upload')
+        result_info = self.request('get', url, params={'path': path_to})
+        upload_link = result_info['href']
         with open(path_from, 'rb') as fh:
-            files = {'file': fh}
+            self.request('put', upload_link, files={'file': fh})
 
-            r2 = requests.put(upload_link, headers=self.base_headers, files=files)
-            self._check_code(r2)
-
-    def upload_file_from_url(self, from_url, path_to):
+    def upload_from_url(self, from_url, path_to):
         """
         Upload file by URL
         :param from_url: URL path from
         :param path_to: path to yandex disk
         """
-        url = self._base_url + "/resources/upload"
-
+        url = urljoin(self._base_url, 'resources/upload')
         payload = {'path': path_to, 'url': from_url}
-        r = requests.post(url, headers=self.base_headers, params=payload)
-        self._check_code(r)
+        self.request('post', url, params=payload)
 
-    def _get_dictionary_of_published_files(self):
-        url = self._base_url + "/resources/public"
-
-        r = requests.get(url, headers=self.base_headers)
-        self._check_code(r)
-
-        return r.json()
-
-    def _check_code(self, req):
-        if not str(req.status_code).startswith("2"):
-            raise YandexDiskException(req.status_code, req.text)
-
-
+    def _get_published_files(self):
+        url = urljoin(self._base_url, 'resources/public')
+        result_info = self.request('get', url)
+        return result_info

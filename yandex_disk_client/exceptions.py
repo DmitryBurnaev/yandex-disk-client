@@ -1,12 +1,26 @@
-#!/usr/bin/python3
+""" Define custom exception to detect yandex disk error
+"""
 
 
-class YandexDiskException(Exception):
-    code = None
+class YaDiskInvalidStatusException(Exception):
 
     def __init__(self, code, text):
-        super(YandexDiskException, self).__init__(text)
         self.code = code
+        super(YaDiskInvalidStatusException, self).__init__(text)
 
     def __str__(self):
-        return "%d. %s" % (self.code, super(YandexDiskException, self).__str__())
+        base_str = super(YaDiskInvalidStatusException, self).__str__()
+        return '{}: {}'.format(self.code, base_str)
+
+
+class YaDiskInvalidResultException(Exception):
+
+    def __init__(self, url, status, text):
+        self.url = url
+        self.status = status
+        super(YaDiskInvalidResultException, self).__init__(text)
+
+    def __str__(self):
+        return 'resource: "{}" did not return correct status: {}'.format(
+            self.url, self.status
+        )
