@@ -2,13 +2,13 @@
 
 Simple python package for access to Yandex disk. 
 
-### How to usage ###
+## How to usage ##
 
-# Get oauth token 
+### Get oauth token ### 
 
 https://tech.yandex.ru/oauth/doc/dg/reference/console-client-docpage/
 
-# Create client object and use it :)
+### Create client object and use it ### 
 ```python
 from yandex_disk_client.rest_client import YandexDiskClient
 client = YandexDiskClient('<your_token>')
