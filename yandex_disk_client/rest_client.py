@@ -1,4 +1,3 @@
-from json import JSONDecodeError
 from urllib.parse import urljoin
 
 from requests import request
@@ -6,6 +5,12 @@ from requests import request
 from .core import Directory, Disk, File
 from .exceptions import YaDiskInvalidStatusException, \
     YaDiskInvalidResultException
+
+# hotfix for python 3.4 - >3.5.x compability
+try:
+    from json import JSONDecodeError as JsonDecodeError
+except ImportError:
+    JsonDecodeError = ValueError
 
 BASE_URL = "https://cloud-api.yandex.net:443/v1/disk/"
 
@@ -38,7 +43,7 @@ class YandexDiskClient(object):
 
         try:
             resp_data = resp.json()
-        except JSONDecodeError as e:
+        except JsonDecodeError as e:
             raise YaDiskInvalidResultException(
                 url, 'Incorrect data returned: {}'.format(e)
             )
