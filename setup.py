@@ -12,6 +12,6 @@ setup(
         '': ['README.txt'],
     },
     requires=[
-        'requests<2.15'
+        'requests==2.18'
     ]
 )

@@ -15,10 +15,10 @@ class YaDiskInvalidStatusException(Exception):
 
 class YaDiskInvalidResultException(Exception):
 
-    def __init__(self, url, status, text):
+    def __init__(self, url, status):
         self.url = url
         self.status = status
-        super(YaDiskInvalidResultException, self).__init__(text)
+        super(YaDiskInvalidResultException, self).__init__()
 
     def __str__(self):
         return 'resource: "{}" did not return correct status: {}'.format(

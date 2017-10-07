@@ -29,7 +29,7 @@ class Directory(object):
                 setattr(self, key, kwargs[key])
 
         if '_embedded' in kwargs:
-            for item in kwargs['embedded']['items']:
+            for item in kwargs['_embedded']['items']:
                 if item['type'] == 'dir':
                     d = Directory(**item)
                     self._children.append(d)

@@ -1,3 +1,4 @@
+from json import JSONDecodeError
 from urllib.parse import urljoin
 
 from requests import request
@@ -6,7 +7,7 @@ from .core import Directory, Disk, File
 from .exceptions import YaDiskInvalidStatusException, \
     YaDiskInvalidResultException
 
-BASE_URL = "https://cloud-api.yandex.net:443/v1/disk"
+BASE_URL = "https://cloud-api.yandex.net:443/v1/disk/"
 
 
 class YandexDiskClient(object):
@@ -24,22 +25,30 @@ class YandexDiskClient(object):
             "Host": "cloud-api.yandex.net"
         }
 
-    def request(self, method, url, **kwargs):
+    def _request(self, method, url, **kwargs):
         resp = request(method, url, headers=self.base_headers, **kwargs)
-        if resp.status_code not in [200, 201]:
+        if resp.status_code not in [200, 201, 204]:
             raise YaDiskInvalidStatusException(resp.status_code, resp.text)
 
-        resp_data = resp.json()
-        if resp_data.get('status') != 'ok':
-            raise YaDiskInvalidResultException(url, resp_data.get('status'))
+        if not resp.ok:
+            raise YaDiskInvalidResultException(url, resp.reason or 'No OK')
 
+        if not bool(resp.content):
+            return None
+
+        try:
+            resp_data = resp.json()
+        except JSONDecodeError as e:
+            raise YaDiskInvalidResultException(
+                url, 'Incorrect data returned: {}'.format(e)
+            )
         return resp_data
 
     def get_disk_metadata(self):
         """
         :return: disk metadata
         """
-        disk_info = self.request('get', self._base_url)
+        disk_info = self._request('get', self._base_url)
         return Disk(**disk_info)
 
     def get_directory(self, path):
@@ -48,7 +57,7 @@ class YandexDiskClient(object):
         :return: content of folder
         """
         url = urljoin(self._base_url, 'resources')
-        directory_info = self.request('get', url, params={'path': path})
+        directory_info = self._request('get', url, params={'path': path})
         return Directory(**directory_info)
 
     def mkdir(self, path):
@@ -57,16 +66,14 @@ class YandexDiskClient(object):
         :return: created folder
         """
         url = urljoin(self._base_url, 'resources')
-        result_info = self.request('put', url, params={'path': path})
-        # TODO: need to check result info!!
+        self._request('put', url, params={'path': path})
         return self.get_directory(path)
 
     def remove(self, path):
         """ Remove file or directory (by path) """
 
         url = urljoin(self._base_url, 'resources')
-        result_info = self.request('delete', url, params={'path': path})
-        # TODO: need to check result info!!
+        result_info = self._request('delete', url, params={'path': path})
         return result_info
 
     def copy(self, path_from, path_to):
@@ -74,19 +81,18 @@ class YandexDiskClient(object):
 
         url = urljoin(self._base_url, 'resources/copy')
         payload = {'path': path_to, 'from': path_from}
-        result_info = self.request('post', url, params=payload)
+        result_info = self._request('post', url, params=payload)
         return result_info
 
     def get_download_link_to_file(self, path_to_file):
         """
         Create Yandex download link
-        :return: ???
+        :return: str link to download file
         """
 
         url = urljoin(self._base_url, 'resources/download')
-        result_info = self.request('get', url, params={'path': path_to_file})
-        # TODO: need to check result info!!
-        return result_info
+        result_info = self._request('get', url, params={'path': path_to_file})
+        return result_info['href']
 
     def get_published_elements(self):
         """
@@ -105,14 +111,13 @@ class YandexDiskClient(object):
         return elements
 
     def publish(self, path):
-        """get public link to folder or file
+        """public folder or file
         :param path: path to publication file or directory
         :return: public link to folder or file
         """
 
         url = urljoin(self._base_url, 'resources/publish')
-        result_info = self.request('put', url, params={'path': path})
-        # TODO: проверить что приходит в result_info...
+        self._request('put', url, params={'path': path})
         files = self._get_published_files()
 
         for file in files['items']:
@@ -127,15 +132,14 @@ class YandexDiskClient(object):
         :param path: path to file or folder
         """
         url = urljoin(self._base_url, 'resources/unpublish')
-        result_info = self.request('put', url, params={'path': path})
-        # TODO: проверить result_info
+        self._request('put', url, params={'path': path})
 
     def files(self):
         """
         :return: List of all files
         """
         url = urljoin(self._base_url, 'resources/files')
-        result_info = self.request('get', url)
+        result_info = self._request('get', url)
         files = [File(**item) for item in result_info['items']]
         return files
 
@@ -145,7 +149,7 @@ class YandexDiskClient(object):
         """
         url = urljoin(self._base_url, 'resources/move')
         payload = {'path': path_to, 'from': path_from}
-        self.request('post', url, params=payload)
+        self._request('post', url, params=payload)
 
     def upload(self, path_from, path_to):
         """
@@ -154,10 +158,10 @@ class YandexDiskClient(object):
         :param path_to: path to yandex disk
         """
         url = urljoin(self._base_url, 'resources/upload')
-        result_info = self.request('get', url, params={'path': path_to})
+        result_info = self._request('get', url, params={'path': path_to})
         upload_link = result_info['href']
         with open(path_from, 'rb') as fh:
-            self.request('put', upload_link, files={'file': fh})
+            self._request('put', upload_link, files={'file': fh})
 
     def upload_from_url(self, from_url, path_to):
         """
@@ -167,9 +171,9 @@ class YandexDiskClient(object):
         """
         url = urljoin(self._base_url, 'resources/upload')
         payload = {'path': path_to, 'url': from_url}
-        self.request('post', url, params=payload)
+        self._request('post', url, params=payload)
 
     def _get_published_files(self):
         url = urljoin(self._base_url, 'resources/public')
-        result_info = self.request('get', url)
+        result_info = self._request('get', url)
         return result_info
