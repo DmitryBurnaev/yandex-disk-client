@@ -11,7 +11,7 @@ setup(
     package_data={
         '': ['README.txt'],
     },
-    requires=[
-        'requests==2.18'
-    ]
+    install_requires=[
+       'requests==2.18'
+    ],
 )
