@@ -12,6 +12,6 @@ setup(
         '': ['README.txt'],
     },
     install_requires=[
-       'requests==2.18'
+       'requests==2.21'
     ],
 )
