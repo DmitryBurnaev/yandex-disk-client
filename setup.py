@@ -41,7 +41,7 @@ class UploadCommand(Command):
 
 setup(
     name='yandex_disk_client',
-    version='0.0.2',
+    version='0.0.3',
     author='Dmitry Burnaev',
     license='MIT',
     packages=[
