@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='yandex_disk_client',
-    version='0.0.1',
+    version='0.0.2',
     author='Dmitry Burnaev',
     license='MIT',
     packages=[
