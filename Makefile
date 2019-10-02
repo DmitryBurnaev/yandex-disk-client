@@ -26,5 +26,5 @@ install: clean
 
 release: clean
 	pipenv run bumpversion patch --allow-dirty
-	pipenv run python setup.py sdist upload --repository https://pypi.devpython.ru
+	pipenv run python setup.py upload
 	make clean
