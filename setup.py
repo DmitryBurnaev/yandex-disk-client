@@ -1,15 +1,15 @@
-# -*- coding: utf-8 -*-
-
 from setuptools import setup
 
 setup(
     name='yandex_disk_client',
     version='0.0.1',
+    author='Dmitry Burnaev',
+    license='MIT',
     packages=[
         'yandex_disk_client',
     ],
     package_data={
-        '': ['README.txt'],
+        '': ['README.md', 'LICENSE'],
     },
     install_requires=[
        'requests==2.21'

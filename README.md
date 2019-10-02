@@ -1,6 +1,6 @@
-# README #
+# Simple python package for access to Yandex disk #
 
-Simple python package for access to Yandex disk. 
+This is just simple python SDK for access to YandexDisk 
 
 ## How to usage ##
 
@@ -17,8 +17,7 @@ client = YandexDiskClient('<your_token>')
 # create directory
 client.mkdir('/test/test2/')
 # upload file
-client.upload('/<local file directory>/test.txt',
-              '/test/test.txt')
+client.upload('/<local file directory>/test.txt', '/test/test.txt')
 # copy file
 client.copy('/test/test.txt', '/test/test2.txt')
 # remove file
@@ -29,7 +28,9 @@ client.move('/test/test.txt', '/test/test3.txt')
 link = client.get_download_link_to_file('/test/test3.txt')
 # publish element
 client.publish('/test/test3/txt')
+```
 
 
+## License
 
-
+This product is released under the MIT license. See LICENSE for details.
