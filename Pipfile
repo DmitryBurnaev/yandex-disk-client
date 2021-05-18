@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-requests = "==2.21.0"
+requests = "==2.25"
 
 [dev-packages]
 flake8 = "*"
@@ -12,4 +12,4 @@ bumpversion = "*"
 twine = "*"
 
 [requires]
-python_version = "3.7"
+python_version = "3.9"

@@ -9,8 +9,10 @@ This is just simple python SDK for access to YandexDisk
 https://tech.yandex.ru/oauth/doc/dg/reference/console-client-docpage/
 
 ### Create client object and use it ### 
+
 ```python
-from yandex_disk_client.rest_client import YandexDiskClient
+from yandex_disk.rest_client import YandexDiskClient
+
 client = YandexDiskClient('<your_token>')
 # "test" - root folder on disk 
 

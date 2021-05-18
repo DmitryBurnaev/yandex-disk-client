@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 from shutil import rmtree
@@ -29,8 +30,8 @@ class UploadCommand(Command):
         try:
             self.status('Removing previous builds ...')
             rmtree(os.path.join(here, 'dist'))
-        except Exception:
-            pass
+        except Exception as err:
+            logging.warning("Couldn't delete dir '%s': %s", here, err)
 
         self.status('Building Source distribution ...')
         os.system('{0} setup.py sdist bdist_wheel'.format(sys.executable))
@@ -40,18 +41,18 @@ class UploadCommand(Command):
 
 
 setup(
-    name='yandex_disk_client',
-    version='0.0.3',
+    name='yandex_disk',
+    version='0.1.0',
     author='Dmitry Burnaev',
     license='MIT',
     packages=[
-        'yandex_disk_client',
+        'yandex_disk',
     ],
     package_data={
         '': ['README.md', 'LICENSE'],
     },
     install_requires=[
-       'requests==2.21'
+       'requests==2.25'
     ],
     zip_safe=True,
     cmdclass={'upload': UploadCommand},
