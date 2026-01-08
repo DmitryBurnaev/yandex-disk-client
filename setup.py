@@ -52,7 +52,7 @@ setup(
         '': ['README.md', 'LICENSE'],
     },
     install_requires=[
-       'requests==2.25'
+       'requests==2.32.4'
     ],
     zip_safe=True,
     cmdclass={'upload': UploadCommand},
